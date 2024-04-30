@@ -1,0 +1,18 @@
+service: spotify-downloader-nodejs
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+
+functions:
+  hello:
+    handler: dist/handler.hello
+    events:
+      - http: ANY /{proxy+}
+      - http: ANY /
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2

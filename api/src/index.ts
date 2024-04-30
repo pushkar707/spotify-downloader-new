@@ -25,30 +25,24 @@ app.get("/test", (req: Request, res: Response) => {
     return res.json({ status: true, message: "API Working nicely" });
 })
 
-app.post("/spotify-link-response", async (req: Request, res: Response) => {
-    const { link } = req.body
-    const id = link.split("?")[0].split("/").pop()
-    const requestFor = link.includes("playlist") ? "playlists" : link.includes("track") ? "tracks" : null
-    if (!requestFor)
-        return res.status(400).json("Invalid link")
+app.get("/playlist/:id", async (req: Request, res: Response) => {
+    const { id } = req.params
 
     const token = await getSpotifyToken.getToken()
     console.log('Using token:', token);
 
-    const newRes = await axios.get(`https://api.spotify.com/v1/${requestFor}/${id}`, {
+    const newRes = await axios.get(`https://api.spotify.com/v1/playlists/${id}`, {
         headers: {
             Authorization: "Bearer " + token
         }
     })
-
     const data = newRes.data
-    
     let tracks = data['tracks']['items']
 
     if (data.tracks.next) {
         let i = 1;
         while (true) {
-            const newRes = await axios.get(`https://api.spotify.com/v1/${requestFor}/${id}/tracks?offset=${i * 100}&limit=100`, {
+            const newRes = await axios.get(`https://api.spotify.com/v1/playlists/${id}/tracks?offset=${i * 100}&limit=100`, {
                 headers: {
                     Authorization: "Bearer " + token
                 }
@@ -61,15 +55,15 @@ app.post("/spotify-link-response", async (req: Request, res: Response) => {
         }
     }
 
-    const playListName = data['name']
+    const playlistName = data['name']
     tracks = tracks.map((item: any) => {
         const { track } = item
-        return { image: track.preview_url, name: track.name, id: track.id, artists: [track.artists.map((artist: any) => artist.name)] }
+        return { image: track.preview_url, name: track.name, id: track.id, album: { id: track.album.id, name: track.album.name }, artists: [track.artists.map((artist: any) => artist.name)] }
     })
 
     return res.json({
         status: true, data: {
-            playListName, tracks
+            playlistName, tracks
         }
     });
 })

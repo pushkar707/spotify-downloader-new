@@ -1,20 +1,15 @@
 "use client"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import axios from "axios";
-import Image from "next/image";
 import { FormEvent, useState } from "react";
 
 export default function Home() {
   const [link, setLink] = useState("")
   const getData = async (e: FormEvent) => {
     e.preventDefault()
-    const res = await axios.post("http://localhost:8000/spotify-link-response", {
-      link
-    })
-    const data = res.data
-    console.log(data);
-    
+    const id = link.split("?")[0].split("/").pop()
+    const requestFor = link.includes("playlist") ? "playlist" : link.includes("track") ? "track" : null
+    window.location.href = `/${requestFor}/${id}`
   }
   return (
     <main className="flex min-h-screen flex-col items-center gap-y-10 p-24">

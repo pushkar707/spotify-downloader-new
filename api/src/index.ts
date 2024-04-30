@@ -22,7 +22,8 @@ mongoose.connect("mongodb://localhost:27017/spotify-downloader")
     })
 
 app.get("/test", (req: Request, res: Response) => {
-    return res.json({ status: true, message: "API Working nicely" });
+    
+    return res.json({ status: true, message: "API Working nicely", key: process.env.SPOTIPY_CLIENT_ID });
 })
 
 app.get("/playlist/:id", async (req: Request, res: Response) => {

@@ -13,6 +13,11 @@ functions:
       - http: ANY /{proxy+}
       - http: ANY /
 
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+package:
+  exclude:
+    - "*.ts"
+    - "src/**"
+    - "package*"
+    - "tsconfig.json"
+    - "node_modules/**/@types/**" # Exclude TypeScript type definitions
+    - "node_modules/.bin/**"

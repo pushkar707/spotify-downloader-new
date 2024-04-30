@@ -26,7 +26,7 @@ const Page = ({ params }: { params: any }) => {
       settracks(data.data.tracks)
       console.log(data);
     }
-    
+
     getData()
   }, [])
 
@@ -51,7 +51,7 @@ const Page = ({ params }: { params: any }) => {
               <TableRow className='cursor-pointer'>
                 <TableCell className="font-medium py-4">{index + 1}</TableCell>
                 <TableCell className='max-w-56'>{track.name}</TableCell>
-                <TableCell>{track.artists[0].slice(0, 2).join(", ")}</TableCell>
+                <TableCell>{track.artists.slice(0, 2).join(", ")}</TableCell>
                 <TableCell>{track.album.name.slice(0, 25)}{track.album.name.length > 25 ? '...' : ''}</TableCell>
                 <TableCell className="justify-center flex">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

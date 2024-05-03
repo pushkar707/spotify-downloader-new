@@ -6,6 +6,7 @@ import dotenv from "dotenv"
 import getSpotifyToken from "./utils/getSpotifyToken";
 import Playlist from "./models/Playlist";
 import Track from "./models/Track";
+import { removeDuplicates } from "./utils";
 dotenv.config()
 
 const app = express();
@@ -72,12 +73,19 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
             const { track } = item
             return { spotifyId: track.uri.split(":").pop(), name: track.name, previewUrl: track.preview_url, popularity: track.popularity, artists: track.artists.map((artist: any) => artist.name), album: { spotifyId: track.album.id, name: track.album.name } }
         })
-        // Todo: check which tracks are already there in db, and also check for repeated tracks in current playlist
-        // Push all the trackIds, which already exists to the playlist, then create new tracks and push them to the playlist.
-        const dbTracks = await Track.insertMany(tracks)
-        await Playlist.create({ name: playlistName, spotifyId: id, tracks: dbTracks.map(track => track._id) })
+
+        tracks = removeDuplicates(tracks, 'spotifyId');
+
+        const existingTracks = await Track.find({
+            spotifyId: { $in: tracks.map((item: any) => item.spotifyId) },
+        });
+
+        const existingDbIds = existingTracks.map((track) => track.spotifyId)
+        const newTracks = tracks.filter((track: any) => !existingDbIds.includes(track.spotifyId))
+
+        const newTrackRecords = await Track.insertMany(newTracks);
+        await Playlist.create({ name: playlistName, spotifyId: id, tracks: [...existingTracks, ...newTrackRecords].map(track => track._id) })
     }
-    console.log(Date.now() - start);
     return res.json({
         status: true, data: {
             playlistName, tracks

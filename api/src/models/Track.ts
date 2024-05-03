@@ -4,6 +4,7 @@ const TrackSchema = new Schema<any>({
     spotifyId: {
         type: String,
         required: true,
+        unique:  true
     },
     name: {
         type: String,

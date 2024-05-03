@@ -36,7 +36,7 @@ const Page = ({ params }: { params: any }) => {
 
       <div className='mt-10'>
         <Table className='max-w-[1200px] mx-auto'>
-          <TableCaption>A list of your recent invoices.</TableCaption>
+          <TableCaption>A list of all songs in your playlist.</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">S.No</TableHead>

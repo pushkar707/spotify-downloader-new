@@ -6,7 +6,6 @@ import dotenv from "dotenv"
 import getSpotifyToken from "./utils/getSpotifyToken";
 import Playlist from "./models/Playlist";
 import Track from "./models/Track";
-import { removeDuplicates } from "./utils";
 dotenv.config()
 
 const app = express();
@@ -69,15 +68,19 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
 
         playlistName = apiData['name']
 
+        const spotifyIds = new Set();
         tracks = tracks.map((item: any, index: number) => {
             const { track } = item
-            return { spotifyId: track.uri.split(":").pop(), name: track.name, previewUrl: track.preview_url, popularity: track.popularity, artists: track.artists.map((artist: any) => artist.name), album: { spotifyId: track.album.id, name: track.album.name } }
-        })
-
-        tracks = removeDuplicates(tracks, 'spotifyId');
+            const spotifyId = track.uri.split(":").pop()
+            if (spotifyIds.has(spotifyId))
+                return null
+            else
+                spotifyIds.add(spotifyId);
+            return { spotifyId, name: track.name, previewUrl: track.preview_url, popularity: track.popularity, artists: track.artists.map((artist: any) => artist.name), album: { spotifyId: track.album.id, name: track.album.name } }
+        }).filter(Boolean)
 
         const existingTracks = await Track.find({
-            spotifyId: { $in: tracks.map((item: any) => item.spotifyId) },
+            spotifyId: { $in: Array.from(spotifyIds) },
         });
 
         const existingDbIds = existingTracks.map((track) => track.spotifyId)

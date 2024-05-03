@@ -69,11 +69,14 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
         playlistName = apiData['name']
 
         const spotifyIds = new Set();
+        const repeatedTracks = new Array()
         tracks = tracks.map((item: any, index: number) => {
             const { track } = item
             const spotifyId = track.uri.split(":").pop()
-            if (spotifyIds.has(spotifyId))
+            if (spotifyIds.has(spotifyId)){
+                repeatedTracks.push(spotifyId)
                 return null
+            }
             else
                 spotifyIds.add(spotifyId);
             return { spotifyId, name: track.name, previewUrl: track.preview_url, popularity: track.popularity, artists: track.artists.map((artist: any) => artist.name), album: { spotifyId: track.album.id, name: track.album.name } }
@@ -82,12 +85,16 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
         const existingTracks = await Track.find({
             spotifyId: { $in: Array.from(spotifyIds) },
         });
-
         const existingDbIds = existingTracks.map((track) => track.spotifyId)
-        const newTracks = tracks.filter((track: any) => !existingDbIds.includes(track.spotifyId))
+        const newTracks: any[] = tracks.filter((track: any) => !existingDbIds.includes(track.spotifyId))
+
+        const repeatedTracksInCurrentPlaylist = [...existingTracks, ...newTracks].filter(item => {
+            return repeatedTracks.includes(item.spotifyId)
+        })
+
 
         const newTrackRecords = await Track.insertMany(newTracks);
-        await Playlist.create({ name: playlistName, spotifyId: id, tracks: [...existingTracks, ...newTrackRecords].map(track => track._id) })
+        await Playlist.create({ name: playlistName, spotifyId: id, tracks: [...existingTracks, ...newTrackRecords, ...repeatedTracksInCurrentPlaylist].map(track => track._id) })
     }
     return res.json({
         status: true, data: {

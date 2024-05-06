@@ -6,6 +6,8 @@ import dotenv from "dotenv"
 import getSpotifyToken from "./utils/getSpotifyToken";
 import Playlist from "./models/Playlist";
 import Track from "./models/Track";
+import puppeteer from "puppeteer"
+import getYtUrl from "./utils/getYtUrl";
 dotenv.config()
 
 const app = express();
@@ -73,7 +75,7 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
         tracks = tracks.map((item: any, index: number) => {
             const { track } = item
             const spotifyId = track.uri.split(":").pop()
-            if (spotifyIds.has(spotifyId)){
+            if (spotifyIds.has(spotifyId)) {
                 repeatedTracks.push(spotifyId)
                 return null
             }
@@ -101,6 +103,21 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
             playlistName, tracks
         }
     });
+})
+
+app.get("/playlist/:id/download", async (req: Request, res: Response) => {
+    const { id } = req.params
+    const playlist = await Playlist.findOne({ spotifyId: id }).populate('tracks').select("tracks")
+    if (!playlist)
+        return res.status(404).json("Playlist not found");
+
+    const browser = await puppeteer.launch();
+    const promises = playlist.tracks.map(async track => await getYtUrl(browser, track))
+    const ytUrls: string[] = await Promise.all(promises) // a multithread approach can be used using workers_threads, but it would require eaach thread to have their own pupetter and thus require lot more resources
+    await browser.close()
+    return res.json({ ytUrls })
+
+
 })
 
 app.get("/delay", async (req: Request, res: Response) => {

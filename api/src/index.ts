@@ -112,25 +112,6 @@ app.get("/playlist/:id/download", async (req: Request, res: Response) => {
         return res.status(404).json("Playlist not found");
 
     const browser = await puppeteer.launch();
-    // const page = await browser.newPage()
-    // page.setDefaultTimeout(600000);
-
-    // const ytUrls: string[] = []
-
-    // for (let track of playlist.tracks) {
-    //     await page.goto(`https://www.youtube.com/results?search_query=${track.name} ${track.artists.join(" ")}`);
-    //     await page.waitForSelector('ytd-video-renderer a.yt-simple-endpoint.inline-block.style-scope.ytd-thumbnail');
-    //     const content = await page.$eval('ytd-video-renderer a.yt-simple-endpoint.inline-block.style-scope.ytd-thumbnail', el => el.href);
-    //     ytUrls.push(content)
-    // }
-
-    // You might always want to avoid this looping asynchronous approach, only time you might want this is when you want previosu response before going to next
-    // const ytUrls: string[] = []
-    // for (let track of playlist.tracks){
-    //     ytUrls.push(await getYtUrl(browser, track.name, track.artists))
-    // }
-
-
     const promises = playlist.tracks.map(async track => await getYtUrl(browser, track))
     const ytUrls: string[] = await Promise.all(promises) // a multithread approach can be used using workers_threads, but it would require eaach thread to have their own pupetter and thus require lot more resources
     await browser.close()

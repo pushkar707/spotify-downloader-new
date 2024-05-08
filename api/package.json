@@ -1,12 +1,18 @@
 {
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.569.0",
+    "@sparticuz/chromium": "^123.0.1",
+    "@types/stream-buffers": "^3.0.7",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mongoose": "^8.3.3",
     "puppeteer": "^22.7.1",
-    "serverless-http": "^3.2.0"
+    "puppeteer-core": "^22.8.0",
+    "serverless-http": "^3.2.0",
+    "stream-buffers": "^3.0.2",
+    "ytdl-core": "^4.11.5"
   },
   "name": "api",
   "version": "1.0.0",

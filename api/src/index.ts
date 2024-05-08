@@ -8,6 +8,7 @@ import Playlist from "./models/Playlist";
 import Track from "./models/Track";
 import puppeteer from "puppeteer"
 import getYtUrl from "./utils/getYtUrl";
+import ytUrlToS3 from "./utils/ytUrlToS3";
 dotenv.config()
 
 const app = express();
@@ -17,17 +18,20 @@ app.use(cors({
     origin: "http://localhost:3000"
 }))
 
-mongoose.connect("mongodb://localhost:27017/spotify-downloader")
+// mongoose.connect("mongodb://localhost:27017/spotify-downloader")
+const mongoDBSrv = "mongodb+srv://pushkar123:ur1OV5wCtkmJk8VZ@cluster0.uh53sw1.mongodb.net/spotify-downloader"
+mongoose.connect(mongoDBSrv)
     .then(() => {
-        console.log("Connected to database successfully")
+        console.log("Connected to database successfully: " + mongoDBSrv)
     })
-    .catch(() => {
-        console.log("Could not connect");
+    .catch((e) => {
+        console.log(e);
+        console.log("Could not connect to" + mongoDBSrv);
     })
 
 app.get("/test", (req: Request, res: Response) => {
 
-    return res.json({ status: true, message: "API Working nicely", key: process.env.SPOTIPY_CLIENT_ID });
+    return res.json({ status: true, message: "API Working nicely" });
 })
 
 app.get("/playlist/:id", async (req: Request, res: Response) => {
@@ -105,19 +109,35 @@ app.get("/playlist/:id", async (req: Request, res: Response) => {
     });
 })
 
-app.get("/playlist/:id/download", async (req: Request, res: Response) => {
+app.get("/playlist/:id/fetch-links", async (req: Request, res: Response) => {
     const { id } = req.params
-    const playlist = await Playlist.findOne({ spotifyId: id }).populate('tracks').select("tracks")
+    const offset = parseInt(req.query.offset as string, 10) || 0; // Default to 0 if invalid
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const playlist = await Playlist.findOne({ spotifyId: id }).select({ tracks: { $slice: [offset * limit, limit] } })
     if (!playlist)
         return res.status(404).json("Playlist not found");
 
+    const tracks = await Track.find({ _id: { $in: playlist.tracks } })
     const browser = await puppeteer.launch();
-    const promises = playlist.tracks.map(async track => await getYtUrl(browser, track))
+    const promises = tracks.map(track => getYtUrl(browser, track))
     const ytUrls: string[] = await Promise.all(promises) // a multithread approach can be used using workers_threads, but it would require eaach thread to have their own pupetter and thus require lot more resources
     await browser.close()
     return res.json({ ytUrls })
+})
 
 
+app.get("/playlist/:id/download", async (req: Request, res: Response) => {
+    const { id } = req.params
+    const offset = parseInt(req.query.offset as string, 10) || 0; // Default to 0 if invalid
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const playlist = await Playlist.findOne({ spotifyId: id }).select({ tracks: { $slice: [offset * limit, limit] } })
+    if (!playlist)
+        return res.status(404).json("Playlist not found");
+
+    const tracks: any[] = await Track.find({ _id: { $in: playlist.tracks } })
+    const promises = tracks.map((track: any) => ytUrlToS3(track.ytVideoLink, track.spotifyId))
+    const awsKeys = await Promise.all(promises)
+    return res.json({ awsKeys })
 })
 
 app.get("/delay", async (req: Request, res: Response) => {
